@@ -110,6 +110,11 @@ EOF
             tls-ca-cert-file $ROOT/assets/tls-ca-certificate.crt
 EOF
         fi
+        if [ "$VERSION" -ge '6009240' ]; then
+            cat >> "$TMP/redis-master$MASTER_INDEX.conf" <<EOF
+            enable-debug-command local
+EOF
+        fi
         redis-server "$TMP/redis-master$MASTER_INDEX.conf"
         CONTEXT="\
             $CONTEXT \
@@ -203,6 +208,8 @@ elif [[ ${@: -1} =~ ^.*clustered(\.[0-9]{7,})?\.[^\.]*\.vtc(\.disabled)?$ ]]; th
         unixsocket $TMP/redis-server$INDEX.sock
         pidfile $TMP/redis-server$INDEX.pid
         cluster-enabled yes
+        cluster-announce-ip $IP
+        cluster-announce-port $PORT
         cluster-config-file $TMP/redis-server$INDEX-nodes.conf
         cluster-node-timeout 5000
         cluster-slave-validity-factor 0
