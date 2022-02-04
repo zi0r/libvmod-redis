@@ -241,15 +241,18 @@ EOF
         yes yes | redis-trib.rb create --replicas $REDIS_CLUSTER_REPLICAS $SERVERS > /dev/null
     fi
 
-    # Wait for all nodes to get the new configuration.
-    sleep 5
+    # Wait for cluster formation in a rudementary way.
+    [[ $IPV6 = 1 ]] && HOST=::1 || HOST=127.0.1
+    [[ $IPV6 = 1 ]] && PATTERN=::1 || PATTERN=127[.]0[.]
+    while [ $(redis-cli -h $HOST -p $((REDIS_CLUSTER_START_PORT+1)) CLUSTER SLOTS | grep "$PATTERN" | wc -l) -lt $REDIS_CLUSTER_SERVERS ]; do
+        sleep 1
+    done
 
     # Add to context:
     #   - All master nodes' addresses ordered by the slots they handle
     #     (redis_master1, redis_master2, ...).
     #   - An example key for each of those master nodes (redis_key_in_master1,
     #   redis_key_in_master2, ...).
-    [[ $IPV6 = 1 ]] && HOST=::1 || HOST=127.0.1
     INDEX=1
     while read LINE; do
         CONTEXT="\
